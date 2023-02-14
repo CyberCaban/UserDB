@@ -9,11 +9,12 @@
 <body>
     <div id="root">
         <h4>Login</h4>
+        <p style="color: rgb(211, 0, 0);"><%= locals.incorrect_ %></p>
         <form action="/login" method="post" style="display: grid; gap: .5rem; grid-template-columns: auto 1fr; margin: 0 auto;">
             <label for="UserLogin">Login</label>
             <input type="text" id="UserLogin" name="UserLogin" required>
             <label for="UserPassword">Password</label>
-            <input type="text" id="UserPassword" name="UserPassword" required>
+            <input type="password" id="UserPassword" name="UserPassword" required>
             <button style="grid-column:span 2;" type="submit">Login</button>
         </form>
         <a href="/regPage">Switch to Register</a>

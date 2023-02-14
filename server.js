@@ -5,21 +5,22 @@ require("dotenv").config()
 var Datastore = require('nedb');
 var db = new Datastore({filename : 'data', timestampData: true});
 db.loadDatabase();
-// db.insert({login : "admin", password: "admin"});
+// db.insert({login : "admin", password: "admin", adminAccess: true});
 
 //инит экспресса
 const express = require('express')
 const app = express()
-const urlencodedParser = express.urlencoded({extended: false});
 
 //задаем движок для страниц
 app.set('view engine', 'ejs')
+app.use(express.urlencoded({extended: false}))
 
 //рендерим страницу (по умолчанию из директории views)
 app.get('/', (req, res) => {
     res.render('regPage')
 })
-    
+
+// переходы на страницы
 app.get('/loginPage', (req, res) => {
     res.render('loginPage')
 })
@@ -29,33 +30,45 @@ app.get('/regPage', (req, res) => {
 })
 
 //принимаем значения со страницы
-app.post('/register', urlencodedParser, (req, res, next) => {
-    const userData = {
-        login: req.body.UserLogin,
-        password: req.body.UserPassword
+app.post('/register', (req, res) => {
+
+    //try catch если что то пойдет не так
+    try{
+        //составляем данные юзера в один объект
+        const userData = {
+            login: req.body.UserLogin,
+            password: req.body.UserPassword,
+            adminAccess: false
+        }
+        
+        // заносим в бд
+        db.insert(userData)
+        //перенаправляем на страницу логина
+        res.redirect('/loginPage')
+    } catch {
+        //при неудаче редирект обратно
+        res.redirect('/regPage')
     }
-    db.insert(userData)
-    console.log(userData);
-    res.send(userData)
-    next()
 })
 
-app.post('/login', urlencodedParser, (req, res, next) => {
-    const userData = {
-        login: req.body.UserLogin,
-        password: req.body.UserPassword
-    }
+app.post('/login', (req, res, next) => {
 
-    console.log(userData);
-
-    db.find( userData , function (err, docs) {
-        if (docs != []) {
-            console.log(docs);
+    //пытаемся найти в бд совпадение по логину
+    db.findOne( {login: req.body.UserLogin}, function (err, docs) {
+        // console.log(docs);
+        //если совпадений нет пишем что неправильный логин
+        if (docs == null) {
+            res.render('loginPage', { incorrect_: 'Incorrect Login' })
+            next()
         }
-    });
-
-    res.send(userData)
-    next()
+        //в другом случае проверяем пароль
+        else if (docs.password != req.body.UserPassword) {
+            res.render('loginPage', { incorrect_: 'Incorrect Password' })
+            next()
+        } else {
+            res.render('index', { name: req.body.UserLogin })
+        }
+    })
 })
 
 // db.find({ login: 'dima', password: '123'}, function (err, docs) {
